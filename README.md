@@ -98,7 +98,6 @@ def get_partitions_and_label(params=None, run_id=0,device=None):
 
 
 
-    # Normalize features
     partitions = [normalize_features(partition) for partition in partitions]
     partitions_test = [normalize_features(partition) for partition in partitions_test]
 
@@ -217,7 +216,6 @@ def vfl_feature_distribution(X, y,y_label, n_clients, min_features_per_client=5,
     
     """
 
-    # Create directory if it doesn't exist
     if not os.path.exists(save_dir):
         os.makedirs(save_dir)
 
@@ -236,7 +234,6 @@ def vfl_feature_distribution(X, y,y_label, n_clients, min_features_per_client=5,
         client_reliability = list(np.random.beta(alpha, beta, size=n_clients))
         print(f"Generated new reliability list for run {run_id}: {client_reliability}")
         
-        # Save the generated list
         with open(filepath, 'wb') as f:
             pickle.dump(client_reliability, f)
         print(f"Saved reliability list to {filepath}")
@@ -251,7 +248,6 @@ def vfl_feature_distribution(X, y,y_label, n_clients, min_features_per_client=5,
     # feature_importance = calculate_group_mi(features, X_without_y_label, y)
 
 
-    # Get feature importances
     feature_importance = model.feature_importances_
     importance_df = pd.DataFrame({'Feature': X_without_y_label.columns, 'Importance': feature_importance})
 
@@ -263,7 +259,6 @@ def vfl_feature_distribution(X, y,y_label, n_clients, min_features_per_client=5,
     print(f'reliability of users = {client_reliability}') 
     client_features = partition_features(features,feature_importance, n_clients,client_reliability, min_features_per_client)
     
-    # Calculate client scores (using sum of feature importances)
     
     return client_features, client_reliability, None 
 ```
@@ -305,9 +300,9 @@ class ClientModel(nn.Module):
         
     def _init_weights(self, module):
         if isinstance(module, nn.Linear):
-            torch.nn.init.kaiming_normal_(module.weight, nonlinearity='linear')  # Kaiming Normal for weights
+            torch.nn.init.kaiming_normal_(module.weight, nonlinearity='linear')  # Kaiming Normal 
             if module.bias is not None:
-                torch.nn.init.zeros_(module.bias)  # Bias initialized to zero (standard approach)
+                torch.nn.init.zeros_(module.bias)  
     
     
     def forward(self, x):
@@ -316,7 +311,6 @@ class ClientModel(nn.Module):
         if x.dim() == 1:
             x = x.unsqueeze(0)
             
-        # Forward pass without residual connections
         e1 = self.encoder1(x)
         e2 = self.encoder2(e1)
         e3 = self.encoder3(e2)
@@ -364,13 +358,12 @@ class ServerModel(nn.Module):
             nn.Linear(4, 1, bias=False)
         )
         
-        # Initialize weights using xavier uniform
         self.apply(self._init_weights)
     def _init_weights(self, module):
         if isinstance(module, nn.Linear):
-            torch.nn.init.kaiming_normal_(module.weight, nonlinearity='linear')  # Kaiming Normal for weights
+            torch.nn.init.kaiming_normal_(module.weight, nonlinearity='linear')  # Kaiming Normal
             if module.bias is not None:
-                torch.nn.init.zeros_(module.bias)  # Bias initialized to zero (standard approach)
+                torch.nn.init.zeros_(module.bias)  # Bias initialized
     
     
     def forward(self, x):
@@ -379,7 +372,6 @@ class ServerModel(nn.Module):
         if x.dim() == 1:
             x = x.unsqueeze(0)
             
-        # Forward pass without residual connections
         x1 = self.layer1(x)
         x2 = self.layer2(x1)
         x3 = self.layer3(x2)
@@ -423,13 +415,11 @@ def aggregate_fit(
     failures,):
 
 
-          # Clean up any leftover gradients from previous rounds
         torch.cuda.empty_cache() if torch.cuda.is_available() else None
         # Do not aggregate if there are failures and failures are not accepted
         if not self.accept_failures and failures:
             return None, {}
 
-        # Convert results
         embedding_results = [
             torch.from_numpy(parameters_to_ndarrays(fit_res.parameters)[0])
             for _, fit_res in results
@@ -447,36 +437,28 @@ def aggregate_fit(
 
         embeddings_aggregated = concatenate_embeddings_by_client_order(embedding_results, order)
         
-        # Compute total availability before any expensive operations
         total_availability = sum(availability)
         
 
-        # Prepare the embedding for model input
         embedding_server = embeddings_aggregated.detach().requires_grad_()
         output = self.model(embedding_server)
         
-        # Main task loss
         task_loss = self.criterion(output, self.label)
         
 
         
-        # Total loss is task loss
         loss_train = task_loss 
         
         if total_availability > 0:
             print(f"availability = {availability}")
             
-            # Clear gradients before backward pass
             self.optimizer.zero_grad()
             
-            # Compute gradients
             loss_train.backward()
             
-            # Update model parameters
             self.optimizer.step()
             self.scheduler.step()
             
-            # Get gradients, detach and convert to numpy
             grads = embedding_server.grad.split(list(self.latent_dim), dim=1)
             np_grads = [grad.detach().cpu().numpy() for grad in grads]
             parameters_aggregated = ndarrays_to_parameters(np_grads)
@@ -493,22 +475,18 @@ def aggregate_fit(
                 del zero_grads
 
         
-        # Store loss for tracking (only the task loss, not including the proximal term)
         self.training_loss.append(task_loss.item())  # Store scalar value, not tensor
         
-        # Create metrics
         metrics_aggregated = {
             "loss_train": task_loss.item(),
             "total_loss": loss_train.item(),
             "available_clients": total_availability
         }
         
-        # Clean up tensors to free memory
         del embedding_server
         del embeddings_aggregated
         del embedding_results
         
-        # Save results at the end of training
         if rnd == self.n_rounds:
             results_dir = Path("_static/results")
             results_dir.mkdir(exist_ok=True)
@@ -713,10 +691,8 @@ Our `FlowerClient` has two main methods that are quite straight forward.
 
 ```python
     def fit(self, parameters, config):
-    # Retrieve values from the config dictionary
         
         best_value = config.get("best", 1.0)  # Default to 1.0 if not present
-        # Now you can use these values in your client-side logic
         
         if best_value == 0:
             print(f"Client {self.cid} saving model")
@@ -785,12 +761,11 @@ This function serves the following objectives:
         prob = torch.rand(1).item()
         available = self.power if prob <= self.reliability else 0
         
-        # Clear previous gradients
         self.model.zero_grad()
         
-        # Only perform backward pass if client is reliable/available
 
-        # Get gradients for this client
+        
+
         client_gradients = torch.from_numpy(parameters[int(self.cid)])
         
         if available > 0:
@@ -800,8 +775,8 @@ This function serves the following objectives:
                 self.optimizer.step()
         torch.save([param.detach().clone() for param in self.model.parameters()],
            f"weights_optimized={self.optimized}_client_{self.cid}_n_run_{self.n_run}.pth")
-        # Compute test embeddings with no gradients needed
-        with torch.no_grad():
+
+                with torch.no_grad():
             self.embedding_test = self.model(self.test)
 
             
@@ -809,14 +784,11 @@ This function serves the following objectives:
         if prob > self.reliability:
             self.embedding_test = torch.zeros_like(self.embedding_test)
         
-        # Convert embeddings to JSON format efficiently
         embedding_np = self.embedding_test.detach().cpu().numpy()
         json_embedding_str = json.dumps(embedding_np.tolist())
         
-        # Free memory by removing reference to the tensor
         del self.embedding_test
         
-        # Return results (loss, num_examples, metrics)
         return 0.0, len(self.test), {
             "params": json_embedding_str, 
             "availability": available,
