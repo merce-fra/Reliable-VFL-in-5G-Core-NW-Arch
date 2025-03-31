@@ -1,0 +1,10 @@
+
+simulation:
+    Optimized: False
+    n_run: 5
+    latent_dim: 48
+    num_clients: 4
+    batch_size: 128
+    n_rounds : 600
+    columns_drop: ["qoe_YinX_v1"]
+    path: "final_raw_dataset_refined_tested.csv"
