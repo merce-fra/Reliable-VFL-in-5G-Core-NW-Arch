@@ -84,11 +84,9 @@ class FlowerClient(fl.client.NumPyClient):
         prob = torch.rand(1).item()
         available = self.power if prob <= self.reliability else 0
         
-        # Clear previous gradients
         self.model.zero_grad()
         
 
-        # Get gradients for this client
         client_gradients = torch.from_numpy(parameters[int(self.cid)])
         
         if available > 0:
@@ -97,7 +95,7 @@ class FlowerClient(fl.client.NumPyClient):
                 self.optimizer.step()
         torch.save([param.detach().clone() for param in self.model.parameters()],
            f"weights_optimized={self.optimized}_client_{self.cid}_n_run_{self.n_run}.pth")
-        # Compute test embeddings with no gradients needed
+
         with torch.no_grad():
             self.embedding_test = self.model(self.test)
 
@@ -106,13 +104,11 @@ class FlowerClient(fl.client.NumPyClient):
         if prob > self.reliability:
             self.embedding_test = torch.zeros_like(self.embedding_test)
         
-        # Convert embeddings to JSON format efficiently
         embedding_np = self.embedding_test.detach().cpu().numpy()
         json_embedding_str = json.dumps(embedding_np.tolist())
         
         del self.embedding_test
         
-        # Return results (loss, num_examples, metrics)
         return 0.0, len(self.test), {
             "params": json_embedding_str, 
             "availability": available,
@@ -142,12 +138,10 @@ class FlowerClient_test(fl.client.NumPyClient):
         try:
             saved_params = torch.load(f"model_weights_optimized={self.optimized}_client_{self.cid}_n_run_{self.n_run}.pth",weights_only=True)
         
-        # Assign the saved parameters to the model
             with torch.no_grad():
                 for param, saved_param in zip(self.model.parameters(), saved_params):
                     param.copy_(saved_param)
         except FileNotFoundError:
-        # File doesn't exist yet, using the initialized model
             print(f"No saved model found for client {self.cid}, using initialized model.")
 
         self.optimizer = torch.optim.Adam(self.model.parameters(), lr=0.01)
@@ -159,27 +153,22 @@ class FlowerClient_test(fl.client.NumPyClient):
 
     def evaluate(self, parameters, config) -> Optional[Tuple[float, Dict[str, List]]]:
         # Determine client availability based on reliability
-
         prob = torch.rand(1).item()
         available = self.power if prob <= self.reliability else 0
  
         
-        # Compute test embeddings with no gradients needed
         with torch.no_grad():
             self.embedding_test = self.model(self.test)
             
-            # Zero out embeddings if client is unreliable
+        # Zero out embeddings if client is unreliable
         if prob > self.reliability:
             self.embedding_test = torch.zeros_like(self.embedding_test)
         
-        # Convert embeddings to JSON format efficiently
         embedding_np = self.embedding_test.detach().cpu().numpy()
         json_embedding_str = json.dumps(embedding_np.tolist())
         
-        # Free memory by removing reference to the tensor
         del self.embedding_test
         
-        # Return results (loss, num_examples, metrics)
         return 0.0, len(self.test), {
             "params": json_embedding_str, 
             "availability": available,
