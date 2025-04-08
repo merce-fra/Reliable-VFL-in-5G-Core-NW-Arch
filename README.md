@@ -20,15 +20,8 @@ Start by cloning the example project and installing the dependencies using the `
 | Aggregation           | The server aggregates these local models by averaging  the parameters or gradients to update a global model.                                                                                             | The server aggregates the updates such as gradients or parameters,  which are then used to update the global model.  However, since each client sees only a part of the features,  the server typically has a more complex role,  sometimes needing to coordinate more sophisticated aggregation strategies  that may involve secure multi-party computation techniques. |
 | Privacy Consideration | The raw data stays on the client's side, only model updates are shared,  which helps in maintaining privacy.                                                                                             | VFL is designed to ensure that no participant can access  the complete feature set of any sample,  thereby preserving the privacy of data.                                                                                                                                                                                                                               |
 
-|               HFL               |               VFL               |
-| :-----------------------------: | :-----------------------------: |
-| ![HFL diagram](_static/hfl.png) | ![VFL diagram](_static/vfl.png) |
-
-Those diagrams illustrate HFL vs VFL using the Titanic dataset (Just for illustration, the dataset used in the images is different than the one used in this example).
 
 ## Data
-
-#### About
 
 The dashing factor v2 dataset  is  used to predict the QoE of the AGV based on other `physical`, `mac` and `application` layer features.
 
