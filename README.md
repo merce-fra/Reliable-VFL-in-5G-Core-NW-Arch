@@ -535,27 +535,24 @@ The function serves the following purposes:
 
 ## Key Components
 
-### 1. Memory Management
-- Clears **CUDA cache** at the beginning to prevent memory issues from previous rounds
-- Explicitly cleans up **tensors** at the end to free memory
 
-### 2. Client Results Processing
+### 1. Client Results Processing
 - Converts **client parameters** to PyTorch tensors
 - Extracts three key elements from each client's results:
   - **Embeddings**: Feature representations
   - **Availability Information**: Determines active clients
   - **Order Information**: Maintains correct concatenation order
 
-### 3. Embedding Aggregation
+### 2. Embedding Aggregation
 - Uses custom function `concatenate_embeddings_by_client_order` to ensure correct order
 - Prevents misalignment of embeddings due to transmission order variations
 
-### 4. Model Training
+### 3. Model Training
 - Feeds **aggregated embeddings** into the server model
 - Computes **task loss** using the provided criterion and labels
 - Performs **backpropagation only if clients are available**
 
-### 5. Gradient Computation and Distribution
+### 4. Gradient Computation and Distribution
 - **When clients are available:**
   - Performs **backpropagation** to compute gradients
   - Updates **model parameters** using an optimizer and scheduler
@@ -563,11 +560,11 @@ The function serves the following purposes:
 - **When all clients fail:**
   - Generates **zero gradients** as placeholders
 
-### 6. Metrics Tracking
+### 5. Metrics Tracking
 - Records **loss values** to monitor training progress
 - Tracks **client availability**
 
-### 7. Results Saving
+### 6. Results Saving
 - Saves **training results to disk at the final round**
 - Handles results differently based on whether **optimization** was used
 
