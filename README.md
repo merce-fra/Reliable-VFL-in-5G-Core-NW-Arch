@@ -1,5 +1,5 @@
 
-# Vertical Federated Learning
+# Reliable Vertical Federated Learning @ CN
 
 This example will showcase how Vertical Federated Learning can be performed using our framework which built over the Flower Framework which only supports Horizental Federated learning (HFL) at the moment [(link)](https://flower.ai/). We'll be using the [dashing factor v2 dataset](https://merce-gitlab.fr-merce.mee.com/gitlab/dashing_factory_2.0/dashing_factory_2.0_ns3)
 to train simple regression models to estimate the QoE of an AGV based on other available distributed features (check the data collection implementation at [dashing factor v2 dataset](https://merce-gitlab.fr-merce.mee.com/gitlab/dashing_factory_2.0/dashing_factory_2.0_ns3)). The main idea of Vertical Federated Learning is that each client -- in contrast to horizental Federated Learning -- is endued with different feature spaces but share the same sample space, and the server holds the ground truth labels of the dataset.
