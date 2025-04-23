@@ -898,6 +898,6 @@ For the optimized feature distribution implementation, result filenames contain 
 
 Below is a plot showing the average test loss of two models trained with client unreliability patterns. The results compare our proposed solution to the random feature distribution strategy. For a detailed explanation of how client unreliability is represented in the figures, please refer to our paper [link].
 
-![MSE Loss plot](_static/weighted_loss_\[10,6\])
+![MSE Loss plot](_static/weighted_loss_10_6.jpg)
 
-![MSE Loss plot](_static/improvement_distribution_\[10,6\])
+![MSE Loss plot](_static/improvement_distribution_10_6.jpg)
