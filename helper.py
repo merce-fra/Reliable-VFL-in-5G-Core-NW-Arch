@@ -89,13 +89,34 @@ def concatenate_embeddings_by_client_order(embedding_results, order_tensors):
 
 def delete_model_weights(client_id,optimized,n_run):
 
-    file_path = f"weights_optimized={optimized}_client_{client_id}_n_run_{n_run}.pth"
+
+    file_s = f"best_model_weights/model_weights_optimized={optimized}_server_{n_run}.pth"
+    
+    # Check if the file exists and delete it
+    if os.path.exists(file_s):
+        os.remove(file_s)
+        print(f"Deleted server file: {file_s}")
+
+
+    file_path = f"model_weights/weights_optimized={optimized}_client_{client_id}_n_run_{n_run}.pth"
     
     # Check if the file exists and delete it
     if os.path.exists(file_path):
         os.remove(file_path)
-        print(f"Deleted file: {file_path}")
+        print(f"Deleted client file: {file_path}")
     else:
         print(f"File not found: {file_path}")
+    
+    
+
+    file_p = f"best_model_weights/model_weights_optimized={optimized}_client_{client_id}_n_run_{n_run}.pth"
+
+        # Check if the file exists and delete it
+    if os.path.exists(file_p):
+        os.remove(file_p)
+        print(f"Deleted client best model file: {file_p}")
+    else:
+        print(f"File not found: {file_p}")
+
 
 # Delete files for clients 0 to 3 at the start of the simulation

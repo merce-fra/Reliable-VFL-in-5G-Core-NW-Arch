@@ -17,7 +17,6 @@ from models import ClientModel
 import pickle
 import os
 from sklearn.ensemble import RandomForestRegressor
-torch.manual_seed(3)
 RANDOM_SEED = 3
 
 
@@ -221,7 +220,7 @@ def partition_features(features, feature_importance, n_clients, client_reliabili
 
 
 
-def vfl_feature_distribution(X, y,y_label, n_clients, min_features_per_client=5,run_id=None, use_saved=False, save_dir="reliability_lists"):
+def vfl_feature_distribution(X, y,y_label, n_clients, min_features_per_client=5,alpha=5,beta=5,run_id=None, use_saved=False, save_dir="reliability_lists"):
     """
     Distribute features to clients based on PCA importance for VFL.
     
@@ -249,10 +248,10 @@ def vfl_feature_distribution(X, y,y_label, n_clients, min_features_per_client=5,
             client_reliability = pickle.load(f)
         print(f"Loaded reliability list for run {run_id}: {client_reliability}")
     else:
+        print(f"Beta distribution with parameters : a = {alpha}, b = {beta}")
         # Generate new reliability list
-        alpha = 8
-        beta = 2
         client_reliability = list(np.random.beta(alpha, beta, size=n_clients))
+        #client_reliability = list(np.random.uniform(0, 1, size=n_clients))
         print(f"Generated new reliability list for run {run_id}: {client_reliability}")
         
         # Save the generated list
@@ -333,13 +332,13 @@ def min_max_scaling(column):
     return (column - min_val) / (max_val - min_val)
 
 
-def get_partitions_and_label(params=None, run_id=0,device=None):
+def get_partitions_and_label(params=None, run_id=0,optimized = True, device=None):
     path = params.get("simulation").get("path")
     X, y_label = get_processed_data(path, params)
 
     # Generate features and partition data
     processed_df, all_keywords = _create_features(X)
-    raw_partitions, reliability = _partition_data(processed_df, all_keywords, params, y_label, run_id)
+    raw_partitions, reliability = _partition_data(processed_df, all_keywords, params, optimized, y_label, run_id)
 
     # Split data into train and test sets
     partitions, partitions_test = zip(*[train_test_split(partition, test_size=0.1, random_state=RANDOM_SEED)
@@ -384,12 +383,14 @@ def get_partitions_and_label(params=None, run_id=0,device=None):
     
 
 
-def _partition_data(df, all_keywords, params, y_label, run_id):
+def _partition_data(df, all_keywords, params,optimized, y_label, run_id):
     initial_n_clusters = params.get('simulation').get('num_clients') 
+    alpha = params.get('simulation').get('alpha') 
+    beta = params.get('simulation').get('beta') 
     min_feature_per_client = 4 
-    if params.get('simulation').get('Optimized'):
+    if optimized:
         print("*******************************************Optimized Assignment*******************************************")
-        clusters, client_reliability, _  = vfl_feature_distribution(df, df[y_label],y_label, initial_n_clusters, min_feature_per_client, run_id=run_id, use_saved=False, save_dir="reliability_lists")
+        clusters, client_reliability, _  = vfl_feature_distribution(df, df[y_label],y_label, initial_n_clusters, min_feature_per_client, alpha, beta, run_id=run_id, use_saved=False, save_dir="reliability_lists")
     else:
         print("*******************************************Random Assignment*******************************************")
         clusters, client_reliability = random_feature_distribution(df, initial_n_clusters, min_feature_per_client, run_id=run_id, use_saved=True, save_dir="reliability_lists")

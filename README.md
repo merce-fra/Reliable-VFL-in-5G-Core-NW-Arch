@@ -881,16 +881,22 @@ function `simulation.py` to run the simulation upon configuring the training pro
 
 ### Simulation Config
 
-To choose the number of clients, monte-carlo runs, latent_dim, feature distribution strategy (optimized or random), you have to access the `params.yaml` file in the directory and assign those variables accordingly. 
+To choose the number of clients, monte-carlo runs, latent_dim, feature distribution strategy (optimized or SoTA -- optimized = True or optimized = False respectively --), you have to access the `params.yaml` file in the directory and assign those variables accordingly. 
 
 To run the simulations use the `simulation.py`  file.
 
  
 ## Results
 
-The results are saved in the `_static/results` folder as `.npy` files.  You can access some plots of them using the `plot.py` function At the moment, the local clients models are saved at the root of the project.. In the case where the optimized  feature distribution is used, those result files are saved under a file name that includes `*optimized = True*`, while for the random implementation, results are saved under file names including `*optimized = True*`, alongside the number of the monte-carlo run.
+The results are stored in the "_static/results_final_[a,b]" directory, with a and b representing the Beta distribution parameters configured in the `params.yml` file. These results are saved as .npy files.
+You can view visualizations of the results by using the `plot.py` function available in each of the results directory. The local client and server models are stored in their respective folders at the project root.
+
+For the optimized feature distribution implementation, result filenames contain the identifier *optimized = True*. Conversely, SoTA implementation results are saved with filenames containing *optimized = False* along with the corresponding Monte Carlo run number.
+
+`Important`: Always begin with the optimized scenario (by setting optimized = True in params.yml) since the SoTA algorithm depends on the same reliability probability samples used by the optimized scenario in each run to ensure fair performance comparison. The reliability probabilities sampled during simulations are saved in their designated folder at the root directory.
 
 
-Here’s a plot showing the average test loss of two models trained with client unreliability patterns. The results compare our proposed solution to the random feature distribution strategy. For a detailed explanation of how client unreliability is represented in the figures, please refer to our paper [link].
+Below is a plot showing the average test loss of two models trained with client unreliability patterns. The results compare our proposed solution to the random feature distribution strategy. For a detailed explanation of how client unreliability is represented in the figures, please refer to our paper [link].
 
-![MSE Loss plot](_static/improvement_distribution.PNG)
+![MSE Loss plot](static\weighted_loss_[10,6].jpg)
+![MSE Loss plot](static\improvement_distribution_[10,6].jpg)

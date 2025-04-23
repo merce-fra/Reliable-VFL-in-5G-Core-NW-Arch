@@ -30,9 +30,10 @@ import numpy as np
 curr = os.getcwd()
 curr = os.path.join(curr,'params.yml')
 params = read_params(curr)
-optimized = params.get('simulation').get('Optimized')
+# optimized = params.get('simulation').get('Optimized')
 from helper import concatenate_embeddings_by_client_order
      
+
 
 class Strategy(fl.server.strategy.FedAvg):
     def __init__(
@@ -58,7 +59,6 @@ class Strategy(fl.server.strategy.FedAvg):
         initial_parameters=None,
         fit_metrics_aggregation_fn=None,
         evaluate_metrics_aggregation_fn=None,
-        proximal_mu=10,  
     ) -> None:
         super().__init__(
             fraction_fit=fraction_fit,
@@ -86,10 +86,8 @@ class Strategy(fl.server.strategy.FedAvg):
         self.i = 0
         self.device = device
         self.power = []
-        self.proximal_mu = proximal_mu
         self.best = 1
         self.previous_model_state = None
-        
 
         self.model = ServerModel(sum(self.latent_dim))
 
@@ -113,16 +111,13 @@ class Strategy(fl.server.strategy.FedAvg):
         client_manager.wait_for(num_clients = self.num_clients,timeout=15)
         clients = client_manager.all().values()
 
-
         config = {
             "best": float(self.best),
-            "round": server_round  # The current round index
+            "round": server_round  
         }
         
-
         fit_ins = FitIns(parameters, config)
         
-
         return [(client, fit_ins) for client in clients]
     
     def aggregate_fit(
@@ -130,13 +125,11 @@ class Strategy(fl.server.strategy.FedAvg):
     rnd,
     results,
     failures,):
-
         torch.cuda.empty_cache() if torch.cuda.is_available() else None
-        # Do not aggregate if there are failures and failures are not accepted
+
         if not self.accept_failures and failures:
             return None, {}
 
-        # Convert results
         embedding_results = [
             torch.from_numpy(parameters_to_ndarrays(fit_res.parameters)[0])
             for _, fit_res in results
@@ -154,32 +147,26 @@ class Strategy(fl.server.strategy.FedAvg):
 
         embeddings_aggregated = concatenate_embeddings_by_client_order(embedding_results, order)
         
-
         total_availability = sum(availability)
-
-        
 
         embedding_server = embeddings_aggregated.detach().requires_grad_()
         output = self.model(embedding_server)
         
-
         task_loss = self.criterion(output, self.label)
+        
+        
         
         
         if total_availability > 0:
             print(f"availability = {availability}")
             
-
             self.optimizer.zero_grad()
             
-
             task_loss.backward()
             
-
             self.optimizer.step()
             self.scheduler.step()
             
-
             grads = embedding_server.grad.split(list(self.latent_dim), dim=1)
             np_grads = [grad.detach().cpu().numpy() for grad in grads]
             parameters_aggregated = ndarrays_to_parameters(np_grads)
@@ -195,9 +182,9 @@ class Strategy(fl.server.strategy.FedAvg):
                 parameters_aggregated = ndarrays_to_parameters(zero_grads)
                 del zero_grads
             
-        
 
-        self.training_loss.append(task_loss.item())  
+        
+        self.training_loss.append(task_loss.item())
         
         metrics_aggregated = {
             "loss_train": task_loss.item(),
@@ -205,12 +192,10 @@ class Strategy(fl.server.strategy.FedAvg):
             "available_clients": total_availability
         }
         
-
         del embedding_server
         del embeddings_aggregated
         del embedding_results
         
-        # Save results at the end of training
         if rnd == self.n_rounds:
             results_dir = Path("_static/results")
             results_dir.mkdir(exist_ok=True)
@@ -227,16 +212,15 @@ class Strategy(fl.server.strategy.FedAvg):
     def evaluate_config(self, server_round: int, parameters: Parameters, client_manager: ClientManager
     ) -> List[Tuple[ClientProxy, FitIns]]:
         """Configure the next round of training."""
+        
         # Get all available clients
         client_manager.wait_for(num_clients = self.num_clients,timeout=15)
         clients = client_manager.all().values()
-
 
         config = {
             "round": server_round  # The current round index
         }
         
-
         fit_ins = FitIns(parameters, config)
         
         return [(client, fit_ins) for client in clients]
@@ -253,7 +237,7 @@ class Strategy(fl.server.strategy.FedAvg):
     results,
     failures):
         self.best = 1
-    
+
         availability_ = []
         order_ = []
         embeddings = []
@@ -267,20 +251,20 @@ class Strategy(fl.server.strategy.FedAvg):
         self.power.append(sum(availability_))
         embedding=concatenate_embeddings_by_client_order(embeddings,order_)
 
-
         with torch.no_grad(): 
             outputs = self.model(embedding)
             loss_test = self.criterion(torch.squeeze(outputs), torch.Tensor(self.test_label))
         if server_round == 1 or self.min_loss > loss_test.item():
             print(f"self.min_loss = {self.min_loss}")
-            torch.save([param.detach().clone() for param in self.model.parameters()],f"model_weights_optimized={self.optimized}_server_{self.n_run}.pth")
+            os.makedirs("best_model_weights", exist_ok=True)
+            torch.save([param.detach().clone() for param in self.model.parameters()],f"best_model_weights/model_weights_optimized={self.optimized}_server_{self.n_run}.pth")
             self.best = 0
             self.min_loss = loss_test.item()
         test_loss = {"loss_test": loss_test}
         print(f"test loss = {loss_test}")
         self.test_loss.append(loss_test)
         if server_round == self.n_rounds:
-            results_dir = Path("_static/results")
+            results_dir = Path(f"_static/results")
             results_dir.mkdir(exist_ok=True)
             if self.optimized == True:
 
@@ -303,6 +287,7 @@ class Strategy_test(fl.server.strategy.FedAvg):
         latent_dim,
         optimized,
         n_rounds,
+        params,
         device,
         *,
         fraction_fit=1,
@@ -317,7 +302,6 @@ class Strategy_test(fl.server.strategy.FedAvg):
         initial_parameters=None,
         fit_metrics_aggregation_fn=None,
         evaluate_metrics_aggregation_fn=None,
-        proximal_mu=10,  # Proximal term coefficient
     ) -> None:
         super().__init__(
             fraction_fit=fraction_fit,
@@ -344,13 +328,11 @@ class Strategy_test(fl.server.strategy.FedAvg):
         self.min_loss = 0
         self.i = 0
         self.device = device
-        
+        self.params=params
         self.power = []
-        self.proximal_mu = proximal_mu
         self.model = ServerModel(sum(self.latent_dim))
 
-        # Load the saved parameters
-        saved_params = torch.load(f"model_weights_optimized={self.optimized}_server_{self.n_run}.pth", weights_only=True)
+        saved_params = torch.load(f"best_model_weights/model_weights_optimized={self.optimized}_server_{self.n_run}.pth", weights_only=True)
 
         with torch.no_grad():
             for param, saved_param in zip(self.model.parameters(), saved_params):
@@ -359,13 +341,15 @@ class Strategy_test(fl.server.strategy.FedAvg):
         self.initial_parameters = ndarrays_to_parameters(
             [val.cpu().numpy() for _, val in self.model.state_dict().items()]
         )
-      
+
 
         self.optimizer = optim.Adam(self.model.parameters(), lr=0.01)
         self.scheduler = optim.lr_scheduler.ExponentialLR(self.optimizer, gamma=0.995)  # 0.5% decay
-        self.criterion = nn.HuberLoss(reduction='mean', delta=1.6)
+        self.criterion = nn.HuberLoss(reduction='mean', delta=1.5)
         self.label = torch.tensor(labels).float().unsqueeze(1)
 
+    
+    
 
 
     def aggregate_evaluate(
@@ -373,7 +357,8 @@ class Strategy_test(fl.server.strategy.FedAvg):
     server_round,
     results,
     failures):
-        
+        alpha = self.params.get('simulation').get('alpha')
+        beta = self.params.get('simulation').get('beta')
         print(f">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>Test phase - run = {self.n_run}>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
         availability_ = []
         order_ = []
@@ -389,7 +374,6 @@ class Strategy_test(fl.server.strategy.FedAvg):
         self.power.append(sum(availability_))
         embedding=concatenate_embeddings_by_client_order(embeddings,order_)
         # embedding=torch.cat(embeddings, dim=1)
-        
         with torch.no_grad(): 
             outputs = self.model(embedding)
             loss_test = self.criterion(torch.squeeze(outputs), torch.Tensor(self.test_label))
@@ -398,7 +382,7 @@ class Strategy_test(fl.server.strategy.FedAvg):
         print(f"test loss = {loss_test}")
         self.test_loss.append(loss_test)
         if server_round == self.n_rounds:
-            results_dir = Path("_static/results_final")
+            results_dir = Path(f"_static/results_final_[a={alpha},b={beta}]")
             results_dir.mkdir(exist_ok=True)
             if self.optimized == True:
                 np.save(str(results_dir / f"final_test_results_optimized_{self.n_run}.npy"), self.test_loss)
