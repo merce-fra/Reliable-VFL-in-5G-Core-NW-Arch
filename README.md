@@ -893,7 +893,7 @@ You can view visualizations of the results by using the `plot.py` function avail
 
 For the optimized feature distribution implementation, result filenames contain the identifier *optimized = True*. Conversely, SoTA implementation results are saved with filenames containing *optimized = False* along with the corresponding Monte Carlo run number.
 
-`Important`: Always begin with the optimized scenario (by setting optimized = True in params.yml) since the SoTA algorithm depends on the same reliability probability samples used by the optimized scenario in each run to ensure fair performance comparison. The reliability probabilities sampled during simulations are saved in their designated folder at the root directory.
+`Important`: Always begin with the optimized scenario (by setting optimized = True in params.yml) since the SoTA algorithm depends on the same reliability probabilities sampled  by the optimized scenario in each run to ensure fair performance comparison. The reliability probabilities sampled during simulations are saved in their designated folder at the root directory.
 
 
 Below is a plot showing the average test loss of two models trained with client unreliability patterns. The results compare our proposed solution to the random feature distribution strategy. For a detailed explanation of how client unreliability is represented in the figures, please refer to our paper [link].
