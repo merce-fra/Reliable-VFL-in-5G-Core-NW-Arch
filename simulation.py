@@ -24,7 +24,6 @@ import torch
 curr = os.getcwd()
 curr = os.path.join(curr,'params.yml')
 params = read_params(curr)
-# optimized_ = [True, False]
 optimized_ = params.get('simulation').get('Optimized')
 n_run = params.get('simulation').get('n_run')
 
