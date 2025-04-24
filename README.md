@@ -908,7 +908,7 @@ Below is a plot showing the average test loss of two models trained with client 
 
 ## Contributing
 Contributions are welcome! Please feel free to submit a Pull Request.
-##License
+## License
 This project is licensed under the BSD-3-Clause license - see the LICENSE file for details.
 
 ---
