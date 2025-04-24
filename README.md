@@ -901,3 +901,6 @@ Below is a plot showing the average test loss of two models trained with client 
 ![MSE Loss plot](_static/weighted_loss_10_6.jpg)
 
 ![MSE Loss plot](_static/improvement_distribution_10_6.jpg)
+
+
+[Mohamad Mestoukirdi](https://github.com/Mestou)
