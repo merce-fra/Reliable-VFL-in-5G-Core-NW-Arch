@@ -120,7 +120,7 @@ python-json-logger==2.0.7
 pytz==2024.1
 PyYAML==6.0.2
 pyzmq==26.2.0
-ray==2.35.0
+ray==2.43.0
 referencing==0.35.1
 regex==2024.7.24
 requests==2.32.3
