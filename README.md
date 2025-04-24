@@ -1,8 +1,8 @@
 
 # Reliable Vertical Federated Learning @ CN
 
-This example will showcase how Vertical Federated Learning can be performed using our framework which built over the Flower Framework which only supports Horizental Federated learning (HFL) at the moment [(link)](https://flower.ai/). We'll be using the [dashing factor v2 dataset](https://merce-gitlab.fr-merce.mee.com/gitlab/dashing_factory_2.0/dashing_factory_2.0_ns3)
-to train simple regression models to estimate the QoE of an AGV based on other available distributed features (check the data collection implementation at [dashing factor v2 dataset](https://merce-gitlab.fr-merce.mee.com/gitlab/dashing_factory_2.0/dashing_factory_2.0_ns3)). The main idea of Vertical Federated Learning is that each client -- in contrast to horizental Federated Learning -- is endued with different feature spaces but share the same sample space, and the server holds the ground truth labels of the dataset.
+Our algorithm is built upon the Flower Framework [(link)](https://flower.ai/), which currently only supports Horizontal Federated Learning (HFL), to demonstrate Vertical Federated Learning capabilities. We'll be using the [dashing factor v2 dataset](https://merce-gitlab.fr-merce.mee.com/gitlab/dashing_factory_2.0/dashing_factory_2.0_ns3) to train simple regression models to estimate the QoE of an AGV based on other available distributed features (check the data collection implementation at [dashing factor v2 dataset](https://merce-gitlab.fr-merce.mee.com/gitlab/dashing_factory_2.0/dashing_factory_2.0_ns3)).
+
 
 This version of the code does not support CUDA acceleration but runs efficiently on most CPU architectures.
 
@@ -12,9 +12,12 @@ This version of the code does not support CUDA acceleration but runs efficiently
 Start by cloning the example project and installing the dependencies using the `requirements.txt` file.
 
 
-## Explanations
+
 
 ### Vertical FL vs Horizontal FL
+
+The main idea of Vertical Federated Learning is that each client -- in contrast to horizental Federated Learning -- is endued with different feature spaces but share the same sample space, and the server holds the ground truth labels of the dataset.
+
 
 |                       | Horizontal Federated Learning (HFL or just FL)                                                                                                                                                           | Vertical Federated Learning (VFL)                                                                                                                                                                                                                                                                                                                                        |
 | --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -903,4 +906,4 @@ Below is a plot showing the average test loss of two models trained with client 
 ![MSE Loss plot](_static/improvement_distribution_10_6.jpg)
 
 
-[Mohamad Mestoukirdi](https://github.com/Mestou)
+
