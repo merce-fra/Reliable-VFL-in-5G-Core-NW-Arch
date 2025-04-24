@@ -913,7 +913,7 @@ This project is licensed under the BSD-3-Clause license - see the LICENSE file f
 
 ---
 
-Built and maintained by [Mohamad Mestoukirdi](https://github.com/Mestou) @MERCE. Feel free to reach out with any questions or suggestions!
+Built and maintained by [Mohamad Mestoukirdi](https://github.com/Mestou) @MERCE France. Feel free to reach out with any questions or suggestions!
 
 
 
