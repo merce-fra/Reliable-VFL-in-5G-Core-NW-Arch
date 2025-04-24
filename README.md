@@ -906,4 +906,14 @@ Below is a plot showing the average test loss of two models trained with client 
 ![MSE Loss plot](_static/improvement_distribution_10_6.jpg)
 
 
+## Contributing
+Contributions are welcome! Please feel free to submit a Pull Request.
+##License
+This project is licensed under the BSD-3-Clause license - see the LICENSE file for details.
+
+---
+
+Built and maintained by [Mohamad Mestoukirdi](https://github.com/Mestou) @MERCE. Feel free to reach out with any questions or suggestions!
+
+
 
