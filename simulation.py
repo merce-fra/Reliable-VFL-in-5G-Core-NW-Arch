@@ -17,7 +17,7 @@ from flwr.client import ClientApp
 from flwr.server import ServerApp, ServerConfig, ServerAppComponents
 from helper import get_power_of_two_indices, delete_model_weights
 import torch
-
+import time
 
 
 
@@ -32,14 +32,15 @@ n_rounds = params.get('simulation').get('n_rounds')
 n_rounds_test = params.get('simulation').get('n_rounds_test')
 alpha = params.get('simulation').get('alpha')
 beta = params.get('simulation').get('beta')
- 
+s = int(time.time())
+
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
 for optimized in optimized_:
-    torch.manual_seed(3)
-    np.random.seed(3)
+    torch.manual_seed(s)
+    np.random.seed(s)
     for i in range(0,n_run):
         print(f"latent_dim = {latent_dim}, n_run = {n_run}, optimized = {optimized}") 
 
