@@ -110,7 +110,7 @@ class Strategy(fl.server.strategy.FedAvg):
         # Get all available clients
         client_manager.wait_for(num_clients = self.num_clients,timeout=15)
         clients = client_manager.all().values()
-
+        clients = client_manager.sample(num_clients=self.num_clients)
         config = {
             "best": float(self.best),
             "round": server_round  
@@ -205,25 +205,6 @@ class Strategy(fl.server.strategy.FedAvg):
                 np.save(str(results_dir / f"train_results_not_optimized_{self.n_run}.npy"), self.training_loss)
         
         return parameters_aggregated, metrics_aggregated
-    
-
-
-
-    def evaluate_config(self, server_round: int, parameters: Parameters, client_manager: ClientManager
-    ) -> List[Tuple[ClientProxy, FitIns]]:
-        """Configure the next round of training."""
-        
-        # Get all available clients
-        client_manager.wait_for(num_clients = self.num_clients,timeout=15)
-        clients = client_manager.all().values()
-
-        config = {
-            "round": server_round  # The current round index
-        }
-        
-        fit_ins = FitIns(parameters, config)
-        
-        return [(client, fit_ins) for client in clients]
     
 
 
