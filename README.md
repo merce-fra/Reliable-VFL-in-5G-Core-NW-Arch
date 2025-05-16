@@ -1,6 +1,7 @@
 
 # Reliable Vertical Federated Learning @ CN
 
+
 Our algorithm is built upon the [Flower Framework](https://flower.ai/), which currently only supports Horizontal Federated Learning (HFL), to demonstrate Vertical Federated Learning capabilities. We'll be using the factory dash video dataset to train simple regression models to estimate the QoE of an AGV running a dash application in a factory based on other distributed NW measurements readings. The dataset can be found in the file "final_raw_dataset_refined_tested.csv".
 
 
@@ -60,11 +61,11 @@ def get_partitions_and_label(params=None, run_id=0,device=None):
     path = params.get("simulation").get("path")
     X, y_label = get_processed_data(path, params)
 
-    # Generate features and partition data
+    
     processed_df, all_keywords = _create_features(X)
     raw_partitions, reliability = _partition_data(processed_df, all_keywords, params, y_label, run_id)
 
-    # Split data into train and test sets
+    
     partitions, partitions_test = zip(*[train_test_split(partition, test_size=0.1, random_state=RANDOM_SEED)
                                         for partition in raw_partitions])
     
@@ -85,7 +86,7 @@ def get_partitions_and_label(params=None, run_id=0,device=None):
     for partition in partitions_test:
         partition.drop(columns=[y_label], inplace=True, errors="ignore")
 
-    # Verify if y_label is still present
+    # Verification for if y_label is removed 
     remaining_columns = [
         i for i, partition in enumerate(partitions) if y_label in partition.columns
     ] + [
@@ -124,12 +125,12 @@ def _partition_data(df, all_keywords, params, y_label, run_id):
     for keywords in keywords_sets:
         selected_columns = set(keywords)  # Only include assigned features
         if y_label in df.columns:
-            selected_columns.add(y_label)  # Ensure y_label is included
+            selected_columns.add(y_label)  
         
         partitions.append(df[list(selected_columns)])
   
     
-    # Check for intersection of features across partitions (except y_label)
+    # Check for intersection of features across partitions to make sure no features are shared among different clients
     all_features = [set(part.columns) - {y_label} for part in partitions]
     for i in range(len(all_features)):
         for j in range(i + 1, len(all_features)):
@@ -179,12 +180,12 @@ def random_feature_distribution(X, n_clusters, min_feature_per_client, run_id, u
     extra_features = total_features - min_required_features
     
     for i in range(extra_features):
-        cluster_sizes[i % n_clusters] += 1  # Distribute extra features evenly without out-of-bounds error
+        cluster_sizes[i % n_clusters] += 1  
     
     clusters = []
     start = 0
     for size in cluster_sizes:
-        clusters.append(features[start:start + size])  # Ensure unique feature assignment
+        clusters.append(features[start:start + size])  
         start += size
     
     # Verify no duplicate features across clusters
@@ -250,7 +251,7 @@ def vfl_feature_distribution(X, y,y_label, n_clients, min_features_per_client=5,
     feature_importance = model.feature_importances_
     importance_df = pd.DataFrame({'Feature': X_without_y_label.columns, 'Importance': feature_importance})
 
-    # Add y_label with importance = 0
+    # let y_label have importance = 0
     importance_df = pd.concat([importance_df, pd.DataFrame({'Feature': y_label, 'Importance': [0]})], ignore_index=True)
     # importance_df = importance_df.sort_values(by='Importance', ascending=False)
     print(f"feature _ importance : {importance_df}")
@@ -274,7 +275,7 @@ class ClientModel(nn.Module):
     def __init__(self, input_size, latent_dim):
         super(ClientModel, self).__init__()
         
-        # Encoder without residual connections and no biases
+
         self.encoder1 = nn.Sequential(
             nn.Linear(input_size, 64, bias=False),
             nn.SELU(),
@@ -294,7 +295,7 @@ class ClientModel(nn.Module):
             nn.Linear(16, latent_dim, bias=False),
         )
         
-        # Initialize weights
+
         self.apply(self._init_weights)
         
     def _init_weights(self, module):
@@ -334,7 +335,7 @@ class ServerModel(nn.Module):
     def __init__(self, input_size):
         super(ServerModel, self).__init__()
         
-        # Wider network with no biases
+
         self.layer1 = nn.Sequential(
             nn.Linear(input_size, 64, bias=False),
             nn.SELU(),
@@ -396,7 +397,7 @@ self.initial_parameters = ndarrays_to_parameters(
 )
 
 self.optimizer = optim.Adam(self.model.parameters(), lr=0.05)
-self.scheduler = optim.lr_scheduler.ExponentialLR(self.optimizer, gamma=0.99)  # 0.5% decay
+self.scheduler = optim.lr_scheduler.ExponentialLR(self.optimizer, gamma=0.99)  
 self.criterion = nn.HuberLoss(reduction='mean',delta=1.5)
 self.label = torch.tensor(labels).float().unsqueeze(1)
 self.best_model = [param.detach().clone() for param in self.model.parameters()]
@@ -474,7 +475,7 @@ def aggregate_fit(
                 del zero_grads
 
         
-        self.training_loss.append(task_loss.item())  # Store scalar value, not tensor
+        self.training_loss.append(task_loss.item())  
         
         metrics_aggregated = {
             "loss_train": task_loss.item(),
