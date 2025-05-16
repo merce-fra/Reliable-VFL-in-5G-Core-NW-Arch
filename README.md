@@ -1,7 +1,7 @@
 
 # Reliable Vertical Federated Learning @ CN
 
-Our algorithm is built upon the [Flower Framework](https://flower.ai/), which currently only supports Horizontal Federated Learning (HFL), to demonstrate Vertical Federated Learning capabilities. We'll be using the [dashing factor v2 dataset](https://merce-gitlab.fr-merce.mee.com/gitlab/dashing_factory_2.0/dashing_factory_2.0_ns3) to train simple regression models to estimate the QoE of an AGV based on other available distributed features (check the data collection implementation at [dashing factor v2 dataset](https://merce-gitlab.fr-merce.mee.com/gitlab/dashing_factory_2.0/dashing_factory_2.0_ns3)).
+Our algorithm is built upon the [Flower Framework](https://flower.ai/), which currently only supports Horizontal Federated Learning (HFL), to demonstrate Vertical Federated Learning capabilities. We'll be using the factory dash video dataset to train simple regression models to estimate the QoE of an AGV running a dash application in a factory based on other distributed NW measurements readings. The dataset can be found in the file "final_raw_dataset_refined_tested.csv".
 
 
 This version of the code does not support CUDA acceleration but runs efficiently on most CPU architectures.
