@@ -13,43 +13,13 @@ This version of the code does not support CUDA acceleration but runs efficiently
 Start by cloning the example project and installing the dependencies using the `requirements.txt` file.
 
 
-
-
-### Vertical FL vs Horizontal FL
-
-The main idea of Vertical Federated Learning is that each client -- in contrast to horizental Federated Learning -- is endued with different feature spaces but share the same sample space, and the server holds the ground truth labels of the dataset.
-
-
-|                       | Horizontal Federated Learning (HFL or just FL)                                                                                                                                                           | Vertical Federated Learning (VFL)                                                                                                                                                                                                                                                                                                                                        |
-| --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Data Distribution     | Clients have different data instances but share the same feature space.  Think of different hospitals having different patients' data (samples)  but recording the same types of information (features). | Each client holds different features for the same instances.  Imagine different institutions holding various tests or  measurements for the same group of patients.                                                                                                                                                                                                      |
-| Model Training        | Each client trains a model on their local data,  which contains all the feature columns for its samples.                                                                                                 | Clients train models on their respective features without  having access to the complete feature set.  Each model only sees a vertical slice of the data (hence the name 'Vertical').                                                                                                                                                                                    |
-| Aggregation           | The server aggregates these local models by averaging  the parameters or gradients to update a global model.                                                                                             | The server aggregates the updates such as gradients or parameters,  which are then used to update the global model.  However, since each client sees only a part of the features,  the server typically has a more complex role,  sometimes needing to coordinate more sophisticated aggregation strategies  that may involve secure multi-party computation techniques. |
-| Privacy Consideration | The raw data stays on the client's side, only model updates are shared,  which helps in maintaining privacy.                                                                                             | VFL is designed to ensure that no participant can access  the complete feature set of any sample,  thereby preserving the privacy of data.                                                                                                                                                                                                                               |
-
-
-## Data
+## Dataset
 
 The dashing factor v2 dataset  is  used to predict the QoE of the AGV based on other `physical`, `mac` and `application` layer features.
 
 
 The data is stored as a feathers file in `final_raw_dataset_refined_tested.csv`. Post-processing, the dataset contains ~6500 samples with their corresponding labels.
 
-#### Preprocessing
-
-In `task.py`, you'll find the preprocessing functions we'll apply to our data:
-
-The pre-processing functions are used to refine the features, pick the label (which we wish to predict), and distribute the features among a number of clients that you wish to use.
-
-To refine the features, normalization function is used :
-
-
-  ```python
-def min_max_scaling(column):
-    min_val = column.min()
-    max_val = column.max()
-    return (column - min_val) / (max_val - min_val)
-  ```
 
 #### Partitioning
 
@@ -142,7 +112,7 @@ def _partition_data(df, all_keywords, params, y_label, run_id):
 
 ```
 
-#### The partitioning makes use of two possible feature distribution strategies, one is random, which distributes the features randomly among (n_clusters= num_clients):
+#### The partitioning makes use of two possible feature distribution strategies, one we call random, which distributes the features randomly among (n_clusters= num_clients):
 
 ```python
 def random_feature_distribution(X, n_clusters, min_feature_per_client, run_id, use_saved=False, save_dir="reliability_lists"):
@@ -200,6 +170,7 @@ def random_feature_distribution(X, n_clusters, min_feature_per_client, run_id, u
 ```
 
 The second strategy distributes features in a way, such that each client holds a set of features of importance equivelant to its relative reliability compared to the other clients. The feature importance are calculated centrally using a Decision Tree Regressor or can be via Mutual Information analysis (MI). We call this strategy "vfl_feature_distribution":
+
 ```python
 def vfl_feature_distribution(X, y,y_label, n_clients, min_features_per_client=5,run_id=None, use_saved=False, save_dir="reliability_lists"):
     """
@@ -255,7 +226,7 @@ def vfl_feature_distribution(X, y,y_label, n_clients, min_features_per_client=5,
     importance_df = pd.concat([importance_df, pd.DataFrame({'Feature': y_label, 'Importance': [0]})], ignore_index=True)
     # importance_df = importance_df.sort_values(by='Importance', ascending=False)
     print(f"feature _ importance : {importance_df}")
-    # Partition features
+
     print(f'reliability of users = {client_reliability}') 
     client_features = partition_features(features,feature_importance, n_clients,client_reliability, min_features_per_client)
     
@@ -407,6 +378,17 @@ With `labels` (test and train) and `latent_dim` are given as an argument to the 
 
 We then redefine the `aggregate_fit` method:
 
+###  Overview - aggregate_fit() method
+The `aggregate_fit`  aggregates embedding results from multiple clients, performs model training on the server, and prepares gradients to be sent back to clients.
+
+
+The function serves the following purposes:
+- **Aggregates embedding results from multiple clients**
+- **Conducts model training on the server side**
+- **Computes and distributes gradients back to clients**
+
+
+
 ```python
 def aggregate_fit(
     self,
@@ -527,61 +509,16 @@ Consequently, these gradients are transmitted to `Client.evaluate` as if they we
 The last thing we have to do is to redefine the `aggregate_evaluate` and `Client.evaluate` functions to
 allow distributed evaluation. Initially, flower framework doesnt allow this as its built with HFL in mind. Since the clients here do not hold any labels to compute the test loss locally as in HFL, the clients should use their test data to produce the test embeddings, and then send them to the server so that it can compute the test loss. To allow this kind of communication between the client and the server during evaluation, we tweak the `aggregate_evaluate` and `Client.evaluate` functions to enable clients to trasmit (using `Client.evaluate` function) their test embeddings (via their test data) to the server which is now able to receive those embeddings (via the tweaked `aggregate_evaluate` function) to calculate the test loss during training. -->
 
-##  Overview
-The `aggregate_fit`  aggregates embedding results from multiple clients, performs model training on the server, and prepares gradients to be sent back to clients.
+
+### Overview - aggregate_evaluate() method
+The `aggregate_evaluate` method is responsible for handling the evaluation process. It processes client-provided test embeddings, evaluates model performance on the server side, and tracks evaluation metrics such as loss and client availability.
 
 
-The function serves the following purposes:
-- **Aggregates embedding results from multiple clients**
-- **Conducts model training on the server side**
-- **Computes and distributes gradients back to clients**
-
-
-## Key Components
-
-
-### 1. Client Results Processing
-- Converts **client parameters** to PyTorch tensors
-- Extracts three key elements from each client's results:
-  - **Embeddings**: Feature representations
-  - **Availability Information**: Determines active clients
-  - **Order Information**: Maintains correct concatenation order
-
-### 2. Embedding Aggregation
-- Uses custom function `concatenate_embeddings_by_client_order` to ensure correct order
-- Prevents misalignment of embeddings due to transmission order variations
-
-### 3. Model Training
-- Feeds **aggregated embeddings** into the server model
-- Computes **task loss** using the provided criterion and labels
-- Performs **backpropagation only if clients are available**
-
-### 4. Gradient Computation and Distribution
-- **When clients are available:**
-  - Performs **backpropagation** to compute gradients
-  - Updates **model parameters** using an optimizer and scheduler
-  - Splits **gradients per client** based on latent dimensions
-- **When all clients fail:**
-  - Generates **zero gradients** as placeholders
-
-### 5. Metrics Tracking
-- Records **loss values** to monitor training progress
-- Tracks **client availability**
-
-### 6. Results Saving
-- Saves **training results to disk at the final round**
-- Handles results differently based on whether **optimization** was used
-
-
-### Special VFL Adaptation
-This function implements a unique approach to federated learning:
-- Instead of returning **updated weights** (as in horizontal federated learning), it returns **gradients**
-- Leverages the **Flower framework** by sending gradients as if they were parameters
-- Enables clients to perform **local weight updates based on server-side feedback**
-- Supports a **Vertical Federated Learning setup**, where different participants hold **different features of the same samples** (unlike traditional horizontal FL where clients hold **same features across different samples**)
-
-
-
+This function serves the following objectives:
+- **Aggregates embedding results from clients during evaluation phase**
+- **Performs model evaluation using test data**
+- **Tracks performance metrics (test loss and availability)**
+- **Saves evaluation results to disk at the end of training**
 
 
 ```python
@@ -630,61 +567,25 @@ This function implements a unique approach to federated learning:
         
 ```
 
-### Overview
-The `aggregate_evaluate` method is responsible for handling the evaluation process. It processes client-provided test embeddings, evaluates model performance on the server side, and tracks evaluation metrics such as loss and client availability.
-
-
-This function serves the following objectives:
-- **Aggregates embedding results from clients during evaluation phase**
-- **Performs model evaluation using test data**
-- **Tracks performance metrics (test loss and availability)**
-- **Saves evaluation results to disk at the end of training**
-
-### Key Components
-
-### 1. Client Results Processing
-- Converts received embedding parameters to **PyTorch tensors**
-- Extracts:
-  - **Embeddings**
-  - **Client availability**
-  - **Client ID order information**
-
-### 2. Embedding Aggregation
-- Aggregates embeddings using `concatenate_embeddings_by_client_order`
-- Ensures client ordering consistency for accurate evaluation
-
-### 3. Model Evaluation
-- Performs **forward pass** through the server model using aggregated embeddings
-- Calculates **test loss** using the defined loss criterion and true test labels
-
-### 4. Best Model Tracking
-- Compares current loss with **minimum recorded loss**
-- Saves model weights if current loss is lower
-
-### 5. Metrics Tracking
-- Logs **test loss** and **client availability (power)** for each evaluation round
-
-### 6. Results Saving
-- At the **final training round**, saves evaluation metrics to disk:
-  - `test_results` (loss values across rounds)
-  - `power_results` (client availability across rounds)
-- Handles separate saving paths based on whether the training was **optimized or not**
-
-
-
-### Special Notes
-- This method plays a crucial role in assessing model quality throughout training rounds
-- Helps in selecting the **best-performing model weights** based on evaluation metrics
-- Complements the training (`aggregate_fit`) function by ensuring robust server-side validation of model performance
-
-
-
-
-
 
 ## Clients Class and Methods
 
 Our `FlowerClient` has two main methods that are quite straight forward.
+
+---
+### Overview - fit() method
+
+The `fit` method is responsible for handling the client-side model fitting process in the VFL setup. It trains the model on the client-side dataset, processes the embedding output. The fit function also saves the local clients models upon reception of a low loss-model indication from the server.
+
+This function serves the following objectives:
+
+- Retrieves configuration settings, including conditions for saving the model.
+- Trains the model on the client’s local data.
+- Generates and processes the embedding results based on model output.
+- Handles client availability and reliability during the fitting process.
+- Returns embedding results for server-side aggregation.
+
+---
 
 ```python
     def fit(self, parameters, config):
@@ -711,48 +612,20 @@ Our `FlowerClient` has two main methods that are quite straight forward.
 
         return result, len(self.train), {}
 ```
----
-### **Overview**
 
-The `fit` method is responsible for handling the client-side model fitting process in the VFL setup. It trains the model on the client-side dataset, processes the embedding output. The fit function also saves the local clients models upon reception of a low loss-model indication from the server.
+
+### Overview - evaluate() method
+
+The `evaluate()` method handles the evaluation process on the client side in the VFL setup. It serves two main purposes: receiving gradients from the server for model updates and forwarding the test data through the local model to produce embeddings, which are then sent back to the server.
 
 This function serves the following objectives:
 
-- Retrieves configuration settings, including conditions for saving the model.
-- Trains the model on the client’s local data.
-- Generates and processes the embedding results based on model output.
-- Handles client availability and reliability during the fitting process.
-- Returns embedding results for server-side aggregation.
-
-### **Key Components**
-
-1. **Configuration Handling**
-   - Retrieves the best model evaluation threshold (`best_value`) from the provided configuration.
-   - Uses this value to determine whether the current model should be saved.
-
-2. **Model Saving**
-   - If `best_value == 0`, the model is saved to disk. The model weights are saved under a filename that includes client ID (`cid`), optimization status (`optimized`), and the current run (`n_run`).
-   - The model weights are saved only if the evaluation criteria are met.
-
-3. **Client Availability Check**
-   - A probabilistic check is performed to simulate client availability during training. If the client's power meets the required reliability threshold, the client is considered available, and the embedding is computed. If not, the embedding is set to zero.
-
-4. **Model Training and Embedding Calculation**
-   - The model's forward pass is performed on the training data to compute embeddings.
-   - If the client is unavailable, the embedding is overwritten with zeros using `torch.no_grad()`.
-
-5. **Embedding Result Preparation**
-   - The embedding is converted to a NumPy array.
-   - Along with the embedding, the client availability status and client ID are returned as part of the result.
-
-6. **Return Value**
-   - The method returns a tuple with:
-     - The embedding as a NumPy array, availability status, and client ID.
-     - The length of the training data to be processed by the server.
-     - An empty dictionary, which can be used for additional configuration or logging.
-
-
+- Receives gradients from the server and backpropagates them through the local model.
+- Performs a forward pass on the test dataset to generate test embeddings.
+- Converts the generated embeddings into a format suitable for transmission back to the server (using JSON serialization).
+- Tracks client availability and returns evaluation results for server-side aggregation.
 ---
+```python
     def evaluate(self, parameters, config) -> Optional[Tuple[float, Dict[str, List]]]:
         # Determine client availability based on reliability
         prob = torch.rand(1).item()
@@ -793,75 +666,9 @@ This function serves the following objectives:
         }
 
 
----
-
-### **Overview**
-
-The `evaluate()` method handles the evaluation process on the client side in the VFL setup. It serves two main purposes: receiving gradients from the server for model updates and forwarding the test data through the local model to produce embeddings, which are then sent back to the server.
-
-This function serves the following objectives:
-
-- Receives gradients from the server and backpropagates them through the local model.
-- Performs a forward pass on the test dataset to generate test embeddings.
-- Converts the generated embeddings into a format suitable for transmission back to the server (using JSON serialization).
-- Tracks client availability and returns evaluation results for server-side aggregation.
-
-### **Key Components**
-
-1. **Client Availability Check**
-   - A probabilistic check determines whether the client is available for performing the evaluation based on the client's reliability. 
-   - If the client is unavailable (`prob > self.reliability`), the client’s output embeddings are zeroed out.
-
-2. **Gradient Backpropagation**
-   - If the client is available, the received gradients (`client_gradients`) are backpropagated through the client’s model using the `.backward()` method.
-   - The model parameters are then updated using the optimizer's `.step()` method.
-
-3. **Model Weight Saving**
-   - After performing the gradient update, the model's weights are saved to disk with a filename that includes the client ID (`cid`), optimization status (`optimized`), and the current run number (`n_run`), as flwr initiates the client object at each round which initializes the model all over again at each round.
-   - This ensures that the model weights are preserved after each evaluation round.
-
-4. **Test Embedding Calculation**
-   - The model performs a forward pass on the test data (`self.test`) to generate embeddings without requiring gradients (`torch.no_grad()`).
-   - If the client is unavailable, the test embeddings are set to zero using `torch.zeros_like()`.
-
-5. **Embedding Serialization**
-   - The generated test embeddings are converted to a NumPy array (`embedding_np`).
-   - These embeddings are serialized to a JSON string format using `json.dumps()`, making them compatible for transmission through the federated learning pipeline.
-
-6. **Memory Management**
-   - After the embeddings are serialized, the reference to the tensor (`self.embedding_test`) is deleted to free up memory.
-
-7. **Return Value**
-   - The method returns a tuple with:
-     - A dummy loss value (0.0) indicating no loss computation is performed on the client side (flwr necessitates it).
-     - The number of test examples (`len(self.test)`).
-     - A dictionary containing:
-       - The serialized test embeddings (`"params"`)
-       - The client availability status (`"availability"`)
-       - The client ID (`"id"`).
-
-### **Special Notes**
-
-- **Client Evaluation Workflow**: This method is part of a two-step process where the client both receives gradients for model updates and generates test embeddings to be sent back to the server.
-  
-- **Embedding Transmission**: A key feature of this method is the conversion of test embeddings into a JSON-encoded string. This is necessary because flwr framework often do not allow tensor transmission directly between clients and servers in the evaluate function, hence the use of JSON serialization.
-  
-- **Client Unavailability Handling**: If the client is unreliable (based on the probabilistic check), the embeddings are zeroed out, effectively simulating a scenario where the client contributes no useful information during that evaluation round.
-
-- **Interaction with Server**: On the server side, the serialized embeddings are deserialized and converted back to tensors using `pickle.loads(j.metrics["params"])`, allowing for consistent handling of client results.
-
----
-
-
-```python3
-partitions, partitions_test, label, label_test, n = get_partitions_and_label(params)
-
-
-def client_fn(cid):
-        return FlowerClient(cid, partitions[int(cid)],partitions_test[int(cid)],latent_dim).to_client()
 ```
 
-We pass a `client_id` and its corresponding partition of `training` and `test` data, alongside the `latent_dim` of the embeddings to each client.
+
 
 
 
