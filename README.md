@@ -8,6 +8,20 @@ Our algorithm is built upon the [Flower Framework](https://flower.ai/), which cu
 This version of the code does not support CUDA acceleration but runs efficiently on most CPU architectures.
 
 
+## Reference
+
+If you find this work useful in your research, please consider citing our related paper:
+```
+@misc{mestoukirdi2025reliableverticalfederatedlearning,
+      title={Reliable Vertical Federated Learning in 5G Core Network Architecture}, 
+      author={Mohamad Mestoukirdi and Mourad Khanfouci},
+      year={2025},
+      eprint={2505.15244},
+      archivePrefix={arXiv},
+      primaryClass={cs.LG},
+      url={https://arxiv.org/abs/2505.15244}, 
+}
+```
 ## Project Setup and Installing Dependencies
 
 Start by cloning the example project and installing the dependencies using the `requirements.txt` file.
