@@ -10,7 +10,7 @@ This version of the code does not support CUDA acceleration but runs efficiently
 
 ## Reference
 
-If you find this work useful in your research, please consider citing our related paper:
+If you find this work useful in your research,  consider citing our related paper:
 ```
 @misc{mestoukirdi2025reliableverticalfederatedlearning,
       title={Reliable Vertical Federated Learning in 5G Core Network Architecture}, 
