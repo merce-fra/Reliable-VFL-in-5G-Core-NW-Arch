@@ -37,7 +37,7 @@ The data is stored in `final_raw_dataset_refined_tested.csv`. Post-processing, t
 
 #### Partitioning
 
-In `task.py`, we  partition the data for our "num_clients" clients to mirror real clients where different organizations hold different feature sets. Moreover, we omit useless features from the original dataset and assign the relevant ground truth labels to the label column defined in the `params.yaml` file:
+In `task.py`, we  partition the data for our "num_clients" clients to mirror real clients where different clients hold different feature sets. Moreover, we omit useless features from the original dataset and assign the relevant ground truth labels to the label column defined in the `params.yaml` file:
 
 ```python
 
