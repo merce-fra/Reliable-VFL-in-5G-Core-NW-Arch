@@ -32,7 +32,7 @@ Start by cloning the example project and installing the dependencies using the `
 The dashing factor v2 dataset  is  used to predict the QoE of the AGV running a video stream DASH application operating in a factory setting based on `physical`, `mac` and `application` layer features.
 
 
-The data is stored as a feathers file in `final_raw_dataset_refined_tested.csv`. Post-processing, the dataset contains ~6500 samples with their corresponding labels.
+The data is stored in `final_raw_dataset_refined_tested.csv`. Post-processing, the dataset contains ~6500 samples with their corresponding labels.
 
 
 #### Partitioning
